@@ -2,10 +2,7 @@
 package store // import "github.com/throttled/throttled/v2/store"
 
 import (
-	"github.com/gomodule/redigo/redis"
-
 	"github.com/throttled/throttled/v2/store/memstore"
-	"github.com/throttled/throttled/v2/store/redigostore"
 )
 
 // NewMemStore initializes a new memory-based store.
@@ -21,16 +18,3 @@ func NewMemStore(maxKeys int) *memstore.MemStore {
 	return st
 }
 
-// NewRedisStore initializes a new Redigo-based store.
-//
-// Deprecated: Use github.com/throttled/throttled/v2/store/redigostore instead.
-func NewRedisStore(pool *redis.Pool, keyPrefix string, db int) *redigostore.RedigoStore {
-	st, err := redigostore.New(pool, keyPrefix, db)
-	if err != nil {
-		// As of this writing, creating a Redis store never returns an error
-		// so this should be safe while providing some ability to return errors
-		// in the future.
-		panic(err)
-	}
-	return st
-}
