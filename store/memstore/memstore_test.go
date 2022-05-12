@@ -1,6 +1,7 @@
 package memstore_test
 
 import (
+	"context"
 	"testing"
 
 	"github.com/throttled/throttled/v2/store/memstore"
@@ -28,7 +29,7 @@ func BenchmarkMemStoreLRU(b *testing.B) {
 	if err != nil {
 		b.Fatal(err)
 	}
-	storetest.BenchmarkGCRAStore(b, st)
+	storetest.BenchmarkGCRAStore(context.Background(), b, st)
 }
 
 func BenchmarkMemStoreUnlimited(b *testing.B) {
@@ -36,5 +37,5 @@ func BenchmarkMemStoreUnlimited(b *testing.B) {
 	if err != nil {
 		b.Fatal(err)
 	}
-	storetest.BenchmarkGCRAStore(b, st)
+	storetest.BenchmarkGCRAStore(context.Background(), b, st)
 }
