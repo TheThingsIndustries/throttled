@@ -2,6 +2,7 @@
 package memstore // import "github.com/throttled/throttled/v2/store/memstore"
 
 import (
+	"context"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -56,7 +57,7 @@ func (ms *MemStore) SetTimeNow(timeNow func() time.Time) {
 // GetWithTime returns the value of the key if it is in the store or
 // -1 if it does not exist. It also returns the current local time on
 // the machine.
-func (ms *MemStore) GetWithTime(key string) (int64, time.Time, error) {
+func (ms *MemStore) GetWithTime(_ context.Context, key string) (int64, time.Time, error) {
 	now := ms.timeNow()
 	valP, ok := ms.get(key, false)
 
@@ -70,7 +71,7 @@ func (ms *MemStore) GetWithTime(key string) (int64, time.Time, error) {
 // SetIfNotExistsWithTTL sets the value of key only if it is not
 // already set in the store it returns whether a new value was set. It
 // ignores the ttl.
-func (ms *MemStore) SetIfNotExistsWithTTL(key string, value int64, _ time.Duration) (bool, error) {
+func (ms *MemStore) SetIfNotExistsWithTTL(_ context.Context, key string, value int64, _ time.Duration) (bool, error) {
 	_, ok := ms.get(key, false)
 
 	if ok {
@@ -103,7 +104,7 @@ func (ms *MemStore) SetIfNotExistsWithTTL(key string, value int64, _ time.Durati
 // old value. If it matches, it sets it to the new value and returns
 // true. Otherwise, it returns false. If the key does not exist in the
 // store, it returns false with no error. It ignores the ttl.
-func (ms *MemStore) CompareAndSwapWithTTL(key string, old, new int64, _ time.Duration) (bool, error) {
+func (ms *MemStore) CompareAndSwapWithTTL(_ context.Context, key string, old, new int64, _ time.Duration) (bool, error) {
 	valP, ok := ms.get(key, false)
 
 	if !ok {
