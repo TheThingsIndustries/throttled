@@ -1,6 +1,7 @@
 package throttled_test
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -18,23 +19,23 @@ type testStore struct {
 	failUpdates bool
 }
 
-func (ts *testStore) GetWithTime(key string) (int64, time.Time, error) {
-	v, _, e := ts.store.GetWithTime(key)
+func (ts *testStore) GetWithTime(ctx context.Context, key string) (int64, time.Time, error) {
+	v, _, e := ts.store.GetWithTime(ctx, key)
 	return v, ts.clock, e
 }
 
-func (ts *testStore) SetIfNotExistsWithTTL(key string, value int64, ttl time.Duration) (bool, error) {
+func (ts *testStore) SetIfNotExistsWithTTL(ctx context.Context, key string, value int64, ttl time.Duration) (bool, error) {
 	if ts.failUpdates {
 		return false, nil
 	}
-	return ts.store.SetIfNotExistsWithTTL(key, value, ttl)
+	return ts.store.SetIfNotExistsWithTTL(ctx, key, value, ttl)
 }
 
-func (ts *testStore) CompareAndSwapWithTTL(key string, old, new int64, ttl time.Duration) (bool, error) {
+func (ts *testStore) CompareAndSwapWithTTL(ctx context.Context, key string, old, new int64, ttl time.Duration) (bool, error) {
 	if ts.failUpdates {
 		return false, nil
 	}
-	return ts.store.CompareAndSwapWithTTL(key, old, new, ttl)
+	return ts.store.CompareAndSwapWithTTL(ctx, key, old, new, ttl)
 }
 
 func TestRateLimit(t *testing.T) {

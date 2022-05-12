@@ -1,6 +1,7 @@
 package throttled
 
 import (
+	"context"
 	"fmt"
 	"time"
 )
@@ -184,6 +185,7 @@ func (g *GCRARateLimiter) RateLimit(key string, quantity int) (bool, RateLimitRe
 	var ttl time.Duration
 	rlc := RateLimitResult{Limit: g.limit, RetryAfter: -1}
 	limited := false
+  ctx := context.Background()
 
 	i := 0
 	for {
@@ -193,7 +195,7 @@ func (g *GCRARateLimiter) RateLimit(key string, quantity int) (bool, RateLimitRe
 
 		// tat refers to the theoretical arrival time that would be expected
 		// from equally spaced requests at exactly the rate limit.
-		tatVal, now, err = g.store.GetWithTime(key)
+		tatVal, now, err = g.store.GetWithTime(ctx, key)
 		if err != nil {
 			return false, rlc, err
 		}
@@ -225,9 +227,9 @@ func (g *GCRARateLimiter) RateLimit(key string, quantity int) (bool, RateLimitRe
 		ttl = newTat.Sub(now)
 
 		if tatVal == -1 {
-			updated, err = g.store.SetIfNotExistsWithTTL(key, newTat.UnixNano(), ttl)
+			updated, err = g.store.SetIfNotExistsWithTTL(ctx, key, newTat.UnixNano(), ttl)
 		} else {
-			updated, err = g.store.CompareAndSwapWithTTL(key, tatVal, newTat.UnixNano(), ttl)
+			updated, err = g.store.CompareAndSwapWithTTL(ctx, key, tatVal, newTat.UnixNano(), ttl)
 		}
 
 		if err != nil {
