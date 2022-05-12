@@ -1,6 +1,7 @@
 package throttled
 
 import (
+	"context"
 	"time"
 )
 
@@ -16,13 +17,13 @@ type GCRAStore interface {
 	// share the same clock. Using separate clocks will work if the
 	// skew is small but not recommended in practice unless you're
 	// lucky enough to be hooked up to GPS or atomic clocks.
-	GetWithTime(key string) (int64, time.Time, error)
+	GetWithTime(ctx context.Context, key string) (int64, time.Time, error)
 
 	// SetIfNotExistsWithTTL sets the value of key only if it is not
 	// already set in the store it returns whether a new value was
 	// set. If the store supports expiring keys and a new value was
 	// set, the key will expire after the provided ttl.
-	SetIfNotExistsWithTTL(key string, value int64, ttl time.Duration) (bool, error)
+	SetIfNotExistsWithTTL(ctx context.Context, key string, value int64, ttl time.Duration) (bool, error)
 
 	// CompareAndSwapWithTTL atomically compares the value at key to
 	// the old value. If it matches, it sets it to the new value and
@@ -30,5 +31,5 @@ type GCRAStore interface {
 	// exist in the store, it returns false with no error. If the
 	// store supports expiring keys and the swap succeeded, the key
 	// will expire after the provided ttl.
-	CompareAndSwapWithTTL(key string, old, new int64, ttl time.Duration) (bool, error)
+	CompareAndSwapWithTTL(ctx context.Context, key string, old, new int64, ttl time.Duration) (bool, error)
 }
