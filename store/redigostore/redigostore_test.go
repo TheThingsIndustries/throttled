@@ -1,6 +1,7 @@
 package redigostore_test
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -22,7 +23,7 @@ func getPool() *redis.Pool {
 		Dial: func() (redis.Conn, error) {
 			return redis.Dial("tcp", ":6379")
 		},
-		TestOnBorrow: func(c redis.Conn, t time.Time) error {
+		TestOnBorrow: func(c redis.Conn, _ time.Time) error {
 			_, err := c.Do("PING")
 			return err
 		},
@@ -45,7 +46,7 @@ func BenchmarkRedisStore(b *testing.B) {
 	defer c.Close()
 	defer clearRedis(c)
 
-	storetest.BenchmarkGCRAStore(b, st)
+	storetest.BenchmarkGCRAStore(context.Background(), b, st)
 }
 
 func clearRedis(c redis.Conn) error {

@@ -2,6 +2,7 @@
 package redigostore // import "github.com/throttled/throttled/v2/store/redigostore"
 
 import (
+	"context"
 	"strings"
 	"time"
 
@@ -55,7 +56,7 @@ func New(pool RedigoPool, keyPrefix string, db int) (*RedigoStore, error) {
 // GetWithTime returns the value of the key if it is in the store
 // or -1 if it does not exist. It also returns the current time at
 // the redis server to microsecond precision.
-func (r *RedigoStore) GetWithTime(key string) (int64, time.Time, error) {
+func (r *RedigoStore) GetWithTime(_ context.Context, key string) (int64, time.Time, error) {
 	var now time.Time
 
 	key = r.prefix + key
@@ -94,7 +95,7 @@ func (r *RedigoStore) GetWithTime(key string) (int64, time.Time, error) {
 // already set in the store it returns whether a new value was set.
 // If a new value was set, the ttl in the key is also set, though this
 // operation is not performed atomically.
-func (r *RedigoStore) SetIfNotExistsWithTTL(key string, value int64, ttl time.Duration) (bool, error) {
+func (r *RedigoStore) SetIfNotExistsWithTTL(_ context.Context, key string, value int64, ttl time.Duration) (bool, error) {
 	key = r.prefix + key
 
 	conn, err := r.getConn()
@@ -131,7 +132,7 @@ func (r *RedigoStore) SetIfNotExistsWithTTL(key string, value int64, ttl time.Du
 // true. Otherwise, it returns false. If the key does not exist in the
 // store, it returns false with no error. If the swap succeeds, the
 // ttl for the key is updated atomically.
-func (r *RedigoStore) CompareAndSwapWithTTL(key string, old, new int64, ttl time.Duration) (bool, error) {
+func (r *RedigoStore) CompareAndSwapWithTTL(_ context.Context, key string, old, new int64, ttl time.Duration) (bool, error) {
 	key = r.prefix + key
 	conn, err := r.getConn()
 	if err != nil {
