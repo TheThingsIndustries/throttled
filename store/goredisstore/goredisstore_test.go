@@ -1,11 +1,12 @@
 package goredisstore_test
 
 import (
+	"context"
 	"log"
 	"testing"
 	"time"
 
-	"github.com/go-redis/redis"
+	"github.com/go-redis/redis/v8"
 	"github.com/throttled/throttled/v2"
 	"github.com/throttled/throttled/v2/store/goredisstore"
 	"github.com/throttled/throttled/v2/store/storetest"
@@ -19,7 +20,7 @@ const (
 // Demonstrates that how to initialize a RateLimiter with redis
 // using go-redis library.
 func ExampleNew() {
-	// import "github.com/go-redis/redis"
+	// import "github.com/go-redis/redis/v8"
 
 	// Initialize a redis client using go-redis
 	client := redis.NewClient(&redis.Options{
@@ -44,33 +45,35 @@ func ExampleNew() {
 }
 
 func TestRedisStore(t *testing.T) {
-	c, st := setupRedis(t, 0)
+	ctx := context.Background()
+	c, st := setupRedis(ctx, t, 0)
 	defer c.Close()
-	defer clearRedis(c)
+	defer clearRedis(ctx, c)
 
-	clearRedis(c)
+	clearRedis(ctx, c)
 	storetest.TestGCRAStore(t, st)
 	storetest.TestGCRAStoreTTL(t, st)
 }
 
 func BenchmarkRedisStore(b *testing.B) {
-	c, st := setupRedis(b, 0)
+  ctx := context.Background()
+	c, st := setupRedis(ctx, b, 0)
 	defer c.Close()
-	defer clearRedis(c)
+	defer clearRedis(ctx, c)
 
-	storetest.BenchmarkGCRAStore(b, st)
+	storetest.BenchmarkGCRAStore(ctx, b, st)
 }
 
-func clearRedis(c *redis.Client) error {
-	keys, err := c.Keys(redisTestPrefix + "*").Result()
+func clearRedis(ctx context.Context, c *redis.Client) error {
+	keys, err := c.Keys(ctx, redisTestPrefix+"*").Result()
 	if err != nil {
 		return err
 	}
 
-	return c.Del(keys...).Err()
+	return c.Del(ctx, keys...).Err()
 }
 
-func setupRedis(tb testing.TB, ttl time.Duration) (*redis.Client, *goredisstore.GoRedisStore) {
+func setupRedis(ctx context.Context, tb testing.TB, ttl time.Duration) (*redis.Client, *goredisstore.GoRedisStore) {
 	client := redis.NewClient(&redis.Options{
 		PoolSize:    10, // default
 		IdleTimeout: 30 * time.Second,
@@ -79,7 +82,7 @@ func setupRedis(tb testing.TB, ttl time.Duration) (*redis.Client, *goredisstore.
 		DB:          redisTestDB, // use default DB
 	})
 
-	if err := client.Ping().Err(); err != nil {
+	if err := client.Ping(ctx).Err(); err != nil {
 		client.Close()
 		tb.Skip("redis server not available on localhost port 6379")
 	}

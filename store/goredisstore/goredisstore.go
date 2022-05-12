@@ -2,10 +2,11 @@
 package goredisstore // import "github.com/throttled/throttled/v2/store/goredisstore"
 
 import (
+	"context"
 	"strings"
 	"time"
 
-	"github.com/go-redis/redis"
+	"github.com/go-redis/redis/v8"
 )
 
 const (
@@ -45,13 +46,13 @@ func New(client redis.UniversalClient, keyPrefix string) (*GoRedisStore, error) 
 // GetWithTime returns the value of the key if it is in the store
 // or -1 if it does not exist. It also returns the current time at
 // the redis server to microsecond precision.
-func (r *GoRedisStore) GetWithTime(key string) (int64, time.Time, error) {
+func (r *GoRedisStore) GetWithTime(ctx context.Context, key string) (int64, time.Time, error) {
 	key = r.prefix + key
 
 	pipe := r.client.Pipeline()
-	timeCmd := pipe.Time()
-	getKeyCmd := pipe.Get(key)
-	_, err := pipe.Exec()
+	timeCmd := pipe.Time(ctx)
+	getKeyCmd := pipe.Get(ctx, key)
+	_, err := pipe.Exec(ctx)
 
 	now, err := timeCmd.Result()
 	if err != nil {
@@ -72,10 +73,10 @@ func (r *GoRedisStore) GetWithTime(key string) (int64, time.Time, error) {
 // already set in the store it returns whether a new value was set.
 // If a new value was set, the ttl in the key is also set, though this
 // operation is not performed atomically.
-func (r *GoRedisStore) SetIfNotExistsWithTTL(key string, value int64, ttl time.Duration) (bool, error) {
+func (r *GoRedisStore) SetIfNotExistsWithTTL(ctx context.Context, key string, value int64, ttl time.Duration) (bool, error) {
 	key = r.prefix + key
 
-	updated, err := r.client.SetNX(key, value, 0).Result()
+	updated, err := r.client.SetNX(ctx, key, value, 0).Result()
 	if err != nil {
 		return false, err
 	}
@@ -87,7 +88,7 @@ func (r *GoRedisStore) SetIfNotExistsWithTTL(key string, value int64, ttl time.D
 		ttl = 1 * time.Second
 	}
 
-	err = r.client.Expire(key, ttl).Err()
+	err = r.client.Expire(ctx, key, ttl).Err()
 	return updated, err
 }
 
@@ -96,7 +97,7 @@ func (r *GoRedisStore) SetIfNotExistsWithTTL(key string, value int64, ttl time.D
 // true. Otherwise, it returns false. If the key does not exist in the
 // store, it returns false with no error. If the swap succeeds, the
 // ttl for the key is updated atomically.
-func (r *GoRedisStore) CompareAndSwapWithTTL(key string, old, new int64, ttl time.Duration) (bool, error) {
+func (r *GoRedisStore) CompareAndSwapWithTTL(ctx context.Context, key string, old, new int64, ttl time.Duration) (bool, error) {
 	key = r.prefix + key
 
 	ttlSeconds := int(ttl.Seconds())
@@ -109,7 +110,7 @@ func (r *GoRedisStore) CompareAndSwapWithTTL(key string, old, new int64, ttl tim
 	}
 
 	// result will be 0 or 1
-	result, err := r.client.Eval(redisCASScript, []string{key}, old, new, ttlSeconds).Result()
+	result, err := r.client.Eval(ctx, redisCASScript, []string{key}, old, new, ttlSeconds).Result()
 
 	var swapped bool
 	if s, ok := result.(int64); ok {
